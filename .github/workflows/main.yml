@@ -1,0 +1,45 @@
+# .github/workflows/terraform.yml
+name: Terraform Deploy or Destroy
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Choose terraform workflow'
+        required: true
+        default: 'create'
+        type: choice
+        options:
+          - create
+          - destroy
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.5.5"
+
+      - name: Terraform init
+        run: terraform init -input=false
+
+      - name: Terraform plan
+        run: terraform plan -no-color
+
+      - name: Terraform apply or destroy
+        run: |
+          if [ "${{ github.event.inputs.action }}" == "destroy" ]; then
+            terraform destroy -auto-approve -no-color
+          else
+            terraform apply -auto-approve -no-color
+          fi
